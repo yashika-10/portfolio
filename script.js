@@ -5,11 +5,7 @@
 // ========================================
 
 const PORTFOLIO_CONFIG = Object.freeze({
-  githubUrl: "https://github.com/yashika-10",
-  linkedInUrl: "https://www.linkedin.com/in/yashika-sharma1004/",
-  resumeUrl: "assets/yashika's resume.pdf",
-  email: "yashika.sharma1004@gmail.com",
-  phone: "+91 8929xxxxxx"
+  email: "yashika.sharma1004@gmail.com"
 });
 
 
@@ -50,129 +46,16 @@ function showStatus(message) {
 
 
 // ========================================
-// URL VALIDATION
-// ========================================
-
-function isValidExternalUrl(value) {
-  return (
-    typeof value === "string" &&
-    /^https?:\/\/\S+$/i.test(value)
-  );
-}
-
-
-// ========================================
-// PHONE FORMATTER
-// ========================================
-
-function formatPhoneForLink(phone) {
-  return phone.replace(/[^\d+]/g, "");
-}
-
-
-// ========================================
-// CONTACT DETAILS
-// ========================================
-
-function setConfiguredContactDetails() {
-
-  // Email links
-  document.querySelectorAll("[data-email-link]").forEach(function (link) {
-    link.href = "mailto:" + PORTFOLIO_CONFIG.email;
-  });
-
-  // Email text
-  document.querySelectorAll("[data-email-text]").forEach(function (element) {
-    element.textContent = PORTFOLIO_CONFIG.email;
-  });
-
-  // Phone links
-  document.querySelectorAll("[data-phone-link]").forEach(function (link) {
-    link.href =
-      "tel:" + formatPhoneForLink(PORTFOLIO_CONFIG.phone);
-  });
-
-  // Phone text
-  document.querySelectorAll("[data-phone-text]").forEach(function (element) {
-    element.textContent = PORTFOLIO_CONFIG.phone;
-  });
-}
-
-
-// ========================================
-// GITHUB / LINKEDIN / RESUME BUTTONS
-// ========================================
-
-function configureExternalButtons() {
-
-  const links = {
-    github: PORTFOLIO_CONFIG.githubUrl,
-    linkedin: PORTFOLIO_CONFIG.linkedInUrl
-  };
-
-
-  // GitHub + LinkedIn
-  document
-    .querySelectorAll("[data-config-link]")
-    .forEach(function (button) {
-
-      const linkName = button.dataset.configLink;
-      const url = links[linkName];
-
-      button.addEventListener("click", function () {
-
-        if (!isValidExternalUrl(url)) {
-
-          showStatus(
-            linkName === "github"
-              ? "GitHub link is not configured yet."
-              : "LinkedIn link is not configured yet."
-          );
-
-          return;
-        }
-
-        window.open(
-          url,
-          "_blank",
-          "noopener,noreferrer"
-        );
-      });
-    });
-
-
-  // Resume
-  document
-    .querySelectorAll("[data-resume-link]")
-    .forEach(function (button) {
-
-      // Enable Resume button
-      button.disabled = false;
-
-      button.addEventListener("click", function () {
-
-        if (!PORTFOLIO_CONFIG.resumeUrl) {
-          showStatus("Resume link is not configured yet.");
-          return;
-        }
-
-        window.open(
-          PORTFOLIO_CONFIG.resumeUrl,
-          "_blank",
-          "noopener,noreferrer"
-        );
-      });
-    });
-}
-
-
-// ========================================
 // MOBILE MENU
 // ========================================
 
-function setMenuState(isOpen) {
+const mobileMenuQuery = window.matchMedia("(max-width: 800px)");
+
+function setMenuState(isOpen, options) {
 
   if (!menuToggle || !navPanel) return;
+
+  const returnFocus = options && options.returnFocus;
 
   menuToggle.setAttribute(
     "aria-expanded",
@@ -183,6 +66,20 @@ function setMenuState(isOpen) {
     "is-open",
     isOpen
   );
+
+  // Hidden mobile menu must not be focusable or announced
+  if (mobileMenuQuery.matches && !isOpen) {
+    navPanel.setAttribute("inert", "");
+  } else {
+    navPanel.removeAttribute("inert");
+  }
+
+  if (isOpen) {
+    const firstLink = navPanel.querySelector("a");
+    if (firstLink) firstLink.focus();
+  } else if (returnFocus) {
+    menuToggle.focus();
+  }
 }
 
 
@@ -209,13 +106,62 @@ navLinks.forEach(function (link) {
 });
 
 
-// Close menu with Escape
+// Close menu with Escape and return focus to the toggle
 document.addEventListener("keydown", function (event) {
 
-  if (event.key === "Escape") {
+  if (
+    event.key === "Escape" &&
+    menuToggle &&
+    menuToggle.getAttribute("aria-expanded") === "true"
+  ) {
+    setMenuState(false, { returnFocus: true });
+  }
+
+});
+
+
+// Close menu when clicking outside it
+document.addEventListener("click", function (event) {
+
+  if (
+    !menuToggle ||
+    !navPanel ||
+    menuToggle.getAttribute("aria-expanded") !== "true"
+  ) {
+    return;
+  }
+
+  if (
+    !navPanel.contains(event.target) &&
+    !menuToggle.contains(event.target)
+  ) {
     setMenuState(false);
   }
 
+});
+
+
+// Close menu when keyboard focus leaves it
+if (navPanel) {
+
+  navPanel.addEventListener("focusout", function (event) {
+
+    if (
+      mobileMenuQuery.matches &&
+      event.relatedTarget &&
+      !navPanel.contains(event.relatedTarget) &&
+      event.relatedTarget !== menuToggle
+    ) {
+      setMenuState(false);
+    }
+
+  });
+}
+
+
+// Reset menu state when switching between mobile and desktop layouts
+mobileMenuQuery.addEventListener("change", function () {
+  setMenuState(false);
 });
 
 
@@ -357,26 +303,6 @@ if ("IntersectionObserver" in window) {
 
 
 // ========================================
-// PROJECT LINKS
-// ========================================
-
-document
-  .querySelectorAll("[data-project-link]")
-  .forEach(function (button) {
-
-    button.addEventListener("click", function () {
-
-      showStatus(
-        button.dataset.projectLink +
-        " is not publicly linked yet."
-      );
-
-    });
-
-  });
-
-
-// ========================================
 // CONTACT FORM
 // ========================================
 
@@ -515,6 +441,5 @@ if (backToTop) {
 // INITIALIZE
 // ========================================
 
-setConfiguredContactDetails();
-configureExternalButtons();
+setMenuState(false);
 updatePageChrome();

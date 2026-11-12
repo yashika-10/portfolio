@@ -1451,7 +1451,7 @@ h3 {
 
 .creative-card {
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--surface);
   transition:
@@ -1518,5 +1518,26 @@ h3 {
 
   .creative-card__content {
     padding: 20px;
+  }
+}
+/* Non-interactive label for private/client projects */
+.project-link--disabled {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+
+.project-link--disabled:hover {
+  border-color: var(--line);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Hidden mobile menu is removed from focus order and accessibility tree */
+@media (max-width: 800px) {
+  .nav-panel:not(.is-open) {
+    visibility: hidden;
+    transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
   }
 }
